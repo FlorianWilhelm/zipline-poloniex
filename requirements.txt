@@ -2,3 +2,6 @@
 # numpy
 # scipy>=0.9
 
+zipline
+requests
+pandas
