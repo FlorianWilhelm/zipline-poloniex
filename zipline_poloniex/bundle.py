@@ -4,8 +4,9 @@
 Zipline bundle for Poloniex exchange
 """
 import logging
-from datetime import datetime, timedelta
+from datetime import time, datetime, timedelta
 
+from pytz import timezone
 import requests
 import pandas as pd
 from zipline.utils.calendars import TradingCalendar, register_calendar
@@ -165,7 +166,21 @@ def create_bundle(asset_pairs, start=None, end=None):
 
 
 class PoloniexCalendar(TradingCalendar):
-    pass
+    @property
+    def name(self):
+        return "POLONIEX"
+
+    @property
+    def tz(self):
+        return timezone('UTC')
+
+    @property
+    def open_time(self):
+        return time(0, 0)
+
+    @property
+    def close_time(self):
+        return time(23, 59, 59)
 
 
 register_calendar('POLONIEX', PoloniexCalendar())
