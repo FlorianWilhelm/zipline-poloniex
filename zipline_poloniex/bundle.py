@@ -180,19 +180,16 @@ class PoloniexCalendar(TradingCalendar):
 
     @property
     def close_time(self):
-        return time(23, 59, 59)
+        return time(23, 59)
 
 
 register_calendar('POLONIEX', PoloniexCalendar())
 register(
-    'poloniex_eth_2016',
+    '.test_poloniex',
     create_bundle(
-        (
-            Pairs.usdt_eth
-        ),
+        [Pairs.usdt_eth],
         pd.Timestamp('2016-01-01', tz='utc'),
-        pd.Timestamp('2016-12-31', tz='utc'),
+        pd.Timestamp('2016-01-31', tz='utc'),
     ),
     calendar_name='POLONIEX',
-    minutes_per_day=24*60
 )
