@@ -52,7 +52,8 @@ def unix_time(dt):
     Returns:
         seconds since epoch
     """
-    epoch = datetime.utcfromtimestamp(0)
+    epoch = datetime.utcfromtimestamp(0).replace(tzinfo=timezone('UTC'))
+    dt = dt.replace(tzinfo=timezone('UTC'))
     return (dt - epoch).total_seconds()
 
 
@@ -79,6 +80,7 @@ def get_trade_hist(pair, start, end):
                       end=end)
     if trades.shape[0] >= 50000:
         raise TradesExceeded("Number of trades exceeded")
+    return trades
 
 
 def get_chart_data(pair, start, end, period=1800):
@@ -103,14 +105,14 @@ def write_assets(asset_db_writer, asset_pairs):
     return {k: asset_pair_map[v] for k, v in asset_map.items()}
 
 
-def make_candle_stick(df):
+def make_candle_stick(trades):
     freq = '1T'
-    volume = df['total'].resample(freq).sum()
+    volume = trades['total'].resample(freq).sum()
     volume = volume.fillna(0)
-    high = df['rate'].resample(freq).max()
-    low = df['rate'].resample(freq).min()
-    open = df['rate'].resample(freq).first()
-    close = df['rate'].resample(freq).last()
+    high = trades['rate'].resample(freq).max()
+    low = trades['rate'].resample(freq).min()
+    open = trades['rate'].resample(freq).first()
+    close = trades['rate'].resample(freq).last()
     return pd.DataFrame(dict(open=open,
                              high=high,
                              low=low,
@@ -135,7 +137,7 @@ def prepare_data(start, end, sid_map, cache):
             if key not in cache:
                 next_day = day + timedelta(days=1)
                 trades = fetch_trades(asset_pair, day, next_day)
-                cache[key] = trades
+                cache[key] = make_candle_stick(trades)
             yield sid, cache[key]
 
 
