@@ -35,7 +35,7 @@ def throttle(calls, seconds=1):
     """Decorator for throttling a function to number of calls per seconds
 
     Args:
-        calls (int): number of calls in interval
+        calls (int): number of calls per interval
         seconds (int): number of seconds in interval
 
     Returns:
@@ -52,7 +52,7 @@ def throttle(calls, seconds=1):
         def wrapper(*args, **kwargs):
             curr_time = time.time()
             if last_calls:
-                # remove calls from last_calls list older then period in seconds
+                # remove calls from last_calls list older then interval in seconds
                 idx_old_calls = [i for i, t in enumerate(last_calls) if t < curr_time - seconds]
                 if idx_old_calls:
                     del last_calls[:idx_old_calls[-1]]
