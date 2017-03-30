@@ -59,9 +59,8 @@ def throttle(calls, seconds=1):
             if len(last_calls) >= calls:
                 idx = len(last_calls) - calls
                 delta = fabs(1 - curr_time + last_calls[idx])
-                print(delta)
                 logger = logging.getLogger(func.__module__)
-                logger.debug("Throttling function {}".format(func.__name__))
+                logger.debug("Stalling call to {} for {}s".format(func.__name__, delta))
                 time.sleep(delta)
             resp = func(*args, **kwargs)
             last_calls.append(time.time())
