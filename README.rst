@@ -14,10 +14,13 @@ Just install the data bundle with pip::
 
 and create a file ``$HOME/.zipline/extension.py`` calling zipline's register_ function.
 The ``create_bundle`` function returns the necessary ingest function for ``register``.
+Use the ``Pairs`` record for common US-Dollar to crypto-currency pairs.
 
 
 Example
 =======
+
+Content of ``$HOME/.zipline/extension.py``:
 
 .. code:: python
 

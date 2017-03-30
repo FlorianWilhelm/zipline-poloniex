@@ -20,6 +20,8 @@ _logger = logging.getLogger(__name__)
 
 
 class Pairs(object):
+    """Record object holding most common US-$ / crypto-currency pairs
+    """
     usdt_btc = 'USDT_BTC'
     usdt_eth = 'USDT_ETH'
     usdt_dash = 'USDT_DASH'
@@ -34,6 +36,15 @@ class Pairs(object):
 
 
 def write_assets(asset_db_writer, asset_pairs):
+    """Fetch and write given asset pairs
+
+    Args:
+        asset_db_writer: zipeline's asset_db_writer object
+        asset_pairs (list): list of asset pairs
+
+    Returns:
+        dict: dictionary of symbol ids to asset pair name
+    """
     asset_pair_map = {pair.split("_")[1]: pair for pair in asset_pairs}
     all_assets = get_currencies()
     asset_df = all_assets.ix[asset_pair_map.keys()].reset_index()
@@ -45,6 +56,14 @@ def write_assets(asset_db_writer, asset_pairs):
 
 
 def make_candle_stick(trades):
+    """Make a candle stick like chart
+
+    Args:
+        trades (pandas.DataFrame): dataframe containing trades
+
+    Returns:
+        pandas.DataFrame: chart data
+    """
     freq = '1T'
     volume = trades['total'].resample(freq).sum()
     volume = volume.fillna(0)
@@ -60,6 +79,16 @@ def make_candle_stick(trades):
 
 
 def fetch_trades(asset_pair, start, end):
+    """Helper function to fetch trades for a single asset pair
+
+    Args:
+        asset_pair: name of the asset pair
+        start (pandas.Timestamp): start of period
+        end (pandas.Timestamp): end of period
+
+    Returns:
+        pandas.DataFrame: dataframe containing trades of asset
+    """
     df = get_trade_hist(asset_pair, start, end)
     df['date'] = pd.to_datetime(df['date'])
     df.set_index('date')
@@ -67,6 +96,17 @@ def fetch_trades(asset_pair, start, end):
 
 
 def prepare_data(start, end, sid_map, cache):
+    """Retrieve and prepare trade data for ingestion
+
+    Args:
+        start (pandas.Timestamp): start of period
+        end (pandas.Timestamp): end of period
+        sid_map (dict): mapping from symbol id to asset pair name
+        cache: cache object as provided by zipline
+
+    Returns:
+        generator of symbol id and dataframe tuples
+    """
     def get_key(sid, day):
         return "{}_{}".format(sid, day.strftime("%Y-%m-%d"))
 
@@ -81,6 +121,16 @@ def prepare_data(start, end, sid_map, cache):
 
 
 def create_bundle(asset_pairs, start=None, end=None):
+    """Create a bundle ingest function
+
+    Args:
+        asset_pairs (list): list of asset pairs
+        start (pandas.Timestamp): start of trading period
+        end (pandas.Timestamp): end of trading period
+
+    Returns:
+        ingest function needed by zipline's register.
+    """
     def ingest(environ,
                asset_db_writer,
                minute_bar_writer,
@@ -107,6 +157,8 @@ def create_bundle(asset_pairs, start=None, end=None):
 
 
 class PoloniexCalendar(TradingCalendar):
+    """Trading Calender of Poloniex Exchange
+    """
     @property
     def name(self):
         return "POLONIEX"
