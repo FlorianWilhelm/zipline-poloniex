@@ -7,7 +7,7 @@ import logging
 import requests
 import pandas as pd
 
-from .utils import unix_time
+from .utils import unix_time, throttle
 
 __author__ = "Florian Wilhelm"
 __copyright__ = "Florian Wilhelm"
@@ -26,6 +26,7 @@ class RequestError(Exception):
     pass
 
 
+@throttle(6)
 def call_api(command, **kwargs):
     """Call to Poloniex API
 
