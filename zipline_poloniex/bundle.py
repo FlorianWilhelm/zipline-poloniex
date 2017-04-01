@@ -71,6 +71,7 @@ def make_candle_stick(trades):
     low = trades['rate'].resample(freq).min()
     open = trades['rate'].resample(freq).first()
     close = trades['rate'].resample(freq).last()
+    # ToDo: Maybe remove NA rows
     return pd.DataFrame(dict(open=open,
                              high=high,
                              low=low,
@@ -91,7 +92,7 @@ def fetch_trades(asset_pair, start, end):
     """
     df = get_trade_hist(asset_pair, start, end)
     df['date'] = pd.to_datetime(df['date'])
-    df.set_index('date')
+    df = df.set_index('date')
     return df
 
 
@@ -114,7 +115,7 @@ def prepare_data(start, end, sid_map, cache):
         for day in pd.date_range(start, end, freq='D', closed='left'):
             key = get_key(sid, day)
             if key not in cache:
-                next_day = day + timedelta(days=1)
+                next_day = day + timedelta(days=1, seconds=-1)
                 trades = fetch_trades(asset_pair, day, next_day)
                 cache[key] = make_candle_stick(trades)
             yield sid, cache[key]
@@ -185,4 +186,5 @@ register(
         pd.Timestamp('2016-01-31', tz='utc'),
     ),
     calendar_name='POLONIEX',
+    minutes_per_day=24*60
 )

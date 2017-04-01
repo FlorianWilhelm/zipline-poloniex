@@ -72,6 +72,10 @@ def get_trade_hist(pair, start, end):
                       currencyPair=pair,
                       start=start,
                       end=end)
+    if trades.empty:  # make sure we add the expected columns
+        trades = pd.DataFrame(
+            columns=["globalTradeID", "tradeID", "date", "type",
+                     "rate", "amount", "total"])
     if trades.shape[0] >= 50000:
         raise TradesExceeded("Number of trades exceeded")
     return trades

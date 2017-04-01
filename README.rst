@@ -34,7 +34,8 @@ Content of ``$HOME/.zipline/extension.py``:
             pd.Timestamp('2016-01-01', tz='utc'),
             pd.Timestamp('2016-12-31', tz='utc'),
         ),
-        calendar_name='POLONIEX'
+        calendar_name='POLONIEX',
+        minutes_per_day=24*60
     )
 
 
