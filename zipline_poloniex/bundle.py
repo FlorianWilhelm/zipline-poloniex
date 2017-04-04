@@ -6,9 +6,12 @@ import logging
 from datetime import time, timedelta
 
 from pytz import timezone
+import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import CustomBusinessDay
 from zipline.utils.calendars import TradingCalendar, register_calendar
 from zipline.data.bundles import register
+from zipline.utils.memoize import lazyval
 
 from .api import get_currencies, get_trade_hist
 
@@ -66,17 +69,13 @@ def make_candle_stick(trades):
     """
     freq = '1T'
     volume = trades['total'].resample(freq).sum()
-    volume = volume.fillna(0)
     high = trades['rate'].resample(freq).max()
     low = trades['rate'].resample(freq).min()
     open = trades['rate'].resample(freq).first()
     close = trades['rate'].resample(freq).last()
-    # ToDo: Maybe remove NA rows
-    return pd.DataFrame(dict(open=open,
-                             high=high,
-                             low=low,
-                             close=close,
-                             volume=volume))
+    df = pd.DataFrame(
+        dict(open=open, high=high, low=low, close=close, volume=volume))
+    return df[~df['high'].isnull()]
 
 
 def fetch_trades(asset_pair, start, end):
@@ -92,6 +91,8 @@ def fetch_trades(asset_pair, start, end):
     """
     df = get_trade_hist(asset_pair, start, end)
     df['date'] = pd.to_datetime(df['date'])
+    for col in ('total', 'rate'):
+        df[col] = df[col].astype(np.float32)
     df = df.set_index('date')
     return df
 
@@ -175,6 +176,13 @@ class PoloniexCalendar(TradingCalendar):
     @property
     def close_time(self):
         return time(23, 59)
+
+    @lazyval
+    def day(self):
+        weekmask = 'Mon Tue Wed Thu Fri Sat Sun'
+        return CustomBusinessDay(
+            weekmask=weekmask
+        )
 
 
 register_calendar('POLONIEX', PoloniexCalendar())
