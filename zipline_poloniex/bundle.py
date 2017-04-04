@@ -179,9 +179,8 @@ class PoloniexCalendar(TradingCalendar):
 
     @lazyval
     def day(self):
-        weekmask = 'Mon Tue Wed Thu Fri Sat Sun'
         return CustomBusinessDay(
-            weekmask=weekmask
+            weekmask='Mon Tue Wed Thu Fri Sat Sun'
         )
 
 
