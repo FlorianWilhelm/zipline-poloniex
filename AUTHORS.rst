@@ -2,4 +2,4 @@
 Developers
 ==========
 
-* Florian Wilhelm <florian.wilhelm@inovex.de>
+* Florian Wilhelm <florian.wilhelm@gmail.com>

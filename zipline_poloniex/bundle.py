@@ -91,7 +91,7 @@ def fetch_trades(asset_pair, start, end):
     """
     df = get_trade_hist(asset_pair, start, end)
     df['date'] = pd.to_datetime(df['date'])
-    for col in ('total', 'rate'):
+    for col in ('total', 'rate', 'amount'):
         df[col] = df[col].astype(np.float32)
     df = df.set_index('date')
     return df

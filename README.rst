@@ -2,7 +2,7 @@
 Zipline Poloniex Bundle
 =======================
 
-Poloniex Data Bundle providing for zipline_, the Pythonic algorithmic trading library.
+Poloniex data bundle for zipline_, the pythonic algorithmic trading library.
 
 
 Description
