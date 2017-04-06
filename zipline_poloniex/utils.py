@@ -2,6 +2,7 @@
 """
 Additional utilities
 """
+import sys
 import time
 import logging
 import functools
@@ -69,3 +70,11 @@ def throttle(calls, seconds=1):
         return wrapper
 
     return wraps
+
+
+def activate_live_debugging():
+    """Activates live debugging with IPython's pdb
+    """
+    _logger.info("Activating live debugging...")
+    from IPython.core import ultratb
+    sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)

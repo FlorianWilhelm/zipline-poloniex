@@ -20,23 +20,40 @@ Use the ``Pairs`` record for common US-Dollar to crypto-currency pairs.
 Example
 =======
 
-Content of ``$HOME/.zipline/extension.py``:
+1) Add following content to ``$HOME/.zipline/extension.py``:
 
 .. code:: python
 
     import pandas as pd
     from zipline_poloniex import create_bundle, Pairs, register
 
+    # adjust the following lines to your needs
+    start_session = pd.Timestamp('2016-01-01', tz='utc')
+    end_session = pd.Timestamp('2016-12-31', tz='utc')
+    assets = [Pairs.usdt_eth]
+
     register(
-        'poloniex_eth_2016',
+        'poloniex',
         create_bundle(
-            [Pairs.usdt_eth],
-            pd.Timestamp('2016-01-01', tz='utc'),
-            pd.Timestamp('2016-12-31', tz='utc'),
+            assets,
+            start_session,
+            end_session,
         ),
         calendar_name='POLONIEX',
-        minutes_per_day=24*60
+        minutes_per_day=24*60,
+        start_session=start_session,
+        end_session=end_session
     )
+
+2) Ingest the data with::
+
+    zipline ingest -b poloniex
+
+
+3) Run your algorithm in ``my_algorithm.py`` with::
+
+    zipline run -f ./my_algorithm.py -s 2016-01-01 -e 2016-12-31 -o results.pickle --data-frequency minute -b poloniex
+
 
 
 Note

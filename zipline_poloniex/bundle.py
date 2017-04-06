@@ -38,24 +38,21 @@ class Pairs(object):
     usdt_str = 'USDT_STR'
 
 
-def write_assets(asset_db_writer, asset_pairs):
-    """Fetch and write given asset pairs
+def fetch_assets(asset_pairs):
+    """Fetch given asset pairs
 
     Args:
-        asset_db_writer: zipeline's asset_db_writer object
         asset_pairs (list): list of asset pairs
 
     Returns:
-        dict: dictionary of symbol ids to asset pair name
+        pandas.DataFrame: dataframe of asset pairs
     """
     asset_pair_map = {pair.split("_")[1]: pair for pair in asset_pairs}
     all_assets = get_currencies()
     asset_df = all_assets.ix[asset_pair_map.keys()].reset_index()
     asset_df = asset_df[['index', 'name']].rename(
         columns={'index': 'symbol', 'name': 'asset_name'})
-    asset_db_writer.write(equities=asset_df)
-    asset_map = asset_df['symbol'].to_dict()
-    return {k: asset_pair_map[v] for k, v in asset_map.items()}
+    return asset_df
 
 
 def make_candle_stick(trades):
@@ -68,7 +65,7 @@ def make_candle_stick(trades):
         pandas.DataFrame: chart data
     """
     freq = '1T'
-    volume = trades['total'].resample(freq).sum()
+    volume = trades['amount'].resample(freq).sum()
     high = trades['rate'].resample(freq).max()
     low = trades['rate'].resample(freq).min()
     open = trades['rate'].resample(freq).first()
@@ -152,7 +149,13 @@ def create_bundle(asset_pairs, start=None, end=None):
         if end is None:
             end = end_session
 
-        sid_map = write_assets(asset_db_writer, asset_pairs)
+        asset_df = fetch_assets(asset_pairs)
+        asset_db_writer.write(equities=asset_df)
+        # generate the mapping between sid and symbol name
+        asset_map = asset_df['symbol'].to_dict()
+        asset_pair_map = {pair.split("_")[1]: pair for pair in asset_pairs}
+        sid_map = {k: asset_pair_map[v] for k, v in asset_map.items()}
+
         data = prepare_data(start, end, sid_map, cache)
         minute_bar_writer.write(data, show_progress=show_progress)
     return ingest
