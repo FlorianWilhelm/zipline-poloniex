@@ -3,13 +3,15 @@
 Zipline bundle for Poloniex exchange
 """
 import logging
-from datetime import time, timedelta
+from datetime import time, timedelta, datetime
 
 from pytz import timezone
 import numpy as np
 import pandas as pd
 from pandas.tseries.offsets import CustomBusinessDay
-from zipline.utils.calendars import TradingCalendar, register_calendar
+from zipline.utils.calendars import (
+    TradingCalendar, register_calendar, register_calendar_alias,
+    deregister_calendar)
 from zipline.data.bundles import register
 from zipline.utils.memoize import lazyval
 
@@ -66,17 +68,20 @@ def make_candle_stick(trades):
     """
     freq = '1T'
     volume = trades['amount'].resample(freq).sum()
+    volume = volume.fillna(0)
     high = trades['rate'].resample(freq).max()
     low = trades['rate'].resample(freq).min()
     open = trades['rate'].resample(freq).first()
     close = trades['rate'].resample(freq).last()
-    df = pd.DataFrame(
+    return pd.DataFrame(
         dict(open=open, high=high, low=low, close=close, volume=volume))
-    return df[~df['high'].isnull()]
 
 
 def fetch_trades(asset_pair, start, end):
     """Helper function to fetch trades for a single asset pair
+
+    Does all necessary conversions, sets `date` as index and assures
+    that `start` and `end` are in the index.
 
     Args:
         asset_pair: name of the asset pair
@@ -87,10 +92,15 @@ def fetch_trades(asset_pair, start, end):
         pandas.DataFrame: dataframe containing trades of asset
     """
     df = get_trade_hist(asset_pair, start, end)
-    df['date'] = pd.to_datetime(df['date'])
+    df['date'] = df['date'].apply(lambda x: datetime.strptime(
+        x, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone('UTC')))
     for col in ('total', 'rate', 'amount'):
         df[col] = df[col].astype(np.float32)
     df = df.set_index('date')
+    if start not in df.index:
+        df.loc[start] = np.nan
+    if end not in df.index:
+        df.loc[end] = np.nan
     return df
 
 
@@ -110,11 +120,11 @@ def prepare_data(start, end, sid_map, cache):
         return "{}_{}".format(sid, day.strftime("%Y-%m-%d"))
 
     for sid, asset_pair in sid_map.items():
-        for day in pd.date_range(start, end, freq='D', closed='left'):
-            key = get_key(sid, day)
+        for start_day in pd.date_range(start, end, freq='D', closed='left', tz='utc'):
+            key = get_key(sid, start_day)
             if key not in cache:
-                next_day = day + timedelta(days=1, seconds=-1)
-                trades = fetch_trades(asset_pair, day, next_day)
+                end_day = start_day + timedelta(days=1, seconds=-1)
+                trades = fetch_trades(asset_pair, start_day, end_day)
                 cache[key] = make_candle_stick(trades)
             yield sid, cache[key]
 
@@ -188,6 +198,10 @@ class PoloniexCalendar(TradingCalendar):
 
 
 register_calendar('POLONIEX', PoloniexCalendar())
+# This is necessary because zipline's developer hard-coded NYSE
+# everywhere in run_algo._run
+deregister_calendar('NYSE')
+register_calendar_alias('NYSE', 'POLONIEX', force=False)
 register(
     '.test_poloniex',
     create_bundle(

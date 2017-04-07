@@ -4,5 +4,5 @@
 
 zipline
 requests
-pandas
+pandas>=0.19
 pytz
