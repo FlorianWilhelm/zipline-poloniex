@@ -54,6 +54,7 @@ def fetch_assets(asset_pairs):
     asset_df = all_assets.ix[asset_pair_map.keys()].reset_index()
     asset_df = asset_df[['index', 'name']].rename(
         columns={'index': 'symbol', 'name': 'asset_name'})
+    asset_df['exchange'] = 'Poloniex'  # needed despite documented as optional
     return asset_df
 
 
@@ -198,8 +199,8 @@ class PoloniexCalendar(TradingCalendar):
 
 
 register_calendar('POLONIEX', PoloniexCalendar())
-# This is necessary because zipline's developer hard-coded NYSE
-# everywhere in run_algo._run
+# The following is necessary because zipline's developer hard-coded NYSE
+# everywhere in run_algo._run, *DOH*!!!
 deregister_calendar('NYSE')
 register_calendar_alias('NYSE', 'POLONIEX', force=False)
 register(
