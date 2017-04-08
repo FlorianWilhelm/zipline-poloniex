@@ -160,6 +160,7 @@ def create_bundle(asset_pairs, start=None, end=None):
         if end is None:
             end = end_session
 
+        adjustment_writer.write()
         asset_df = fetch_assets(asset_pairs)
         asset_db_writer.write(equities=asset_df)
         # generate the mapping between sid and symbol name
