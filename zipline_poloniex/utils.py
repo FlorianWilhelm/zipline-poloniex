@@ -78,3 +78,13 @@ def activate_live_debugging():
     _logger.info("Activating live debugging...")
     from IPython.core import ultratb
     sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=1)
+
+
+def setup_logging(loglevel):
+    """Setup basic logging
+    Args:
+      loglevel (int): minimum loglevel for emitting messages
+    """
+    logformat = "[%(asctime)s] %(levelname)s:%(name)s:%(message)s"
+    logging.basicConfig(level=loglevel, stream=sys.stdout,
+                        format=logformat, datefmt="%Y-%m-%d %H:%M:%S")
