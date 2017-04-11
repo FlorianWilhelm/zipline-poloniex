@@ -24,6 +24,6 @@ def initialize(context):
 
 
 def handle_data(context, data):
-    _logger.info("Handling data...")
+    _logger.debug("Handling data...")
     order(symbol('ETH'), 10)
     record(ETH=data.current(symbol('ETH'), 'price'))
