@@ -58,16 +58,19 @@ def fetch_assets(asset_pairs):
     return asset_df
 
 
-def make_candle_stick(trades):
+def make_candle_stick(trades, freq='1T'):
     """Make a candle stick like chart
+
+    Check [1] for resample rules:
+    [1]: http://pandas.pydata.org/pandas-docs/stable/timeseries.html#offset-aliases
 
     Args:
         trades (pandas.DataFrame): dataframe containing trades
+        freq (str): frequency for resampling (default 1 minute)
 
     Returns:
         pandas.DataFrame: chart data
     """
-    freq = '1T'
     volume = trades['amount'].resample(freq).sum()
     volume = volume.fillna(0)
     high = trades['rate'].resample(freq).max()
