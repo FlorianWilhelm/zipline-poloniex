@@ -12,9 +12,10 @@ from pandas.tseries.offsets import CustomBusinessDay
 from zipline.utils.calendars import (
     TradingCalendar, register_calendar, register_calendar_alias,
     deregister_calendar)
+from zipline.data.bundles import register
 from zipline.utils.memoize import lazyval
 
-from .api import get_currencies, get_trade_hist
+from .api import get_currencies, get_trade_hist, TradesExceeded
 
 __author__ = "Florian Wilhelm"
 __copyright__ = "Florian Wilhelm"
@@ -27,7 +28,7 @@ class Pairs(object):
     """Record object holding most common US-$ / crypto-currency pairs
     """
     usdt_btc = 'USDT_BTC'
-    usdt_btc = 'USDT_BCH'
+    usdt_bch = 'USDT_BCH'
     usdt_eth = 'USDT_ETH'
     usdt_dash = 'USDT_DASH'
     usdt_etc = 'USDT_ETC'
@@ -80,6 +81,33 @@ def make_candle_stick(trades, freq='1T'):
     return pd.DataFrame(
         dict(open=open, high=high, low=low, close=close, volume=volume))
 
+def get_trade_hist_alias(asset_pair, start, end):
+    """Helper function to run api.get_trade_hist
+
+    If a TradesExceeded exception is raised, it splits the timerange of
+    (start) to (end) in half and calls itself with the new timeranges.
+
+    This prevents any 'hotspots' where there is extremely high trading
+    activity in a short period of time - eg on usdt_btc
+
+    Args:
+        asset_pair: name of the asset pair
+        start (pandas.Timestamp): start of period
+        end (pandas.Timestamp): end of period
+
+    Returns:
+        pandas.DataFrame: dataframe containing trades of asset
+    """
+    original_timedelta = end - start
+    try:
+        df = get_trade_hist(asset_pair, start, end)
+    except TradesExceeded:
+        new_timedelta = original_timedelta / 2
+        df = pd.concat([
+            get_trade_hist_alias(asset_pair, start, start + new_timedelta - pd.offsets.Second()),
+            get_trade_hist_alias(asset_pair, start + new_timedelta, end)
+            ])
+    return df
 
 def fetch_trades(asset_pair, start, end):
     """Helper function to fetch trades for a single asset pair
@@ -95,7 +123,7 @@ def fetch_trades(asset_pair, start, end):
     Returns:
         pandas.DataFrame: dataframe containing trades of asset
     """
-    df = get_trade_hist(asset_pair, start, end)
+    df = get_trade_hist_alias(asset_pair, start, end)
     df['date'] = df['date'].apply(lambda x: datetime.strptime(
         x, '%Y-%m-%d %H:%M:%S').replace(tzinfo=timezone('UTC')))
     for col in ('total', 'rate', 'amount'):
@@ -127,21 +155,10 @@ def prepare_data(start, end, sid_map, cache):
         for start_day in pd.date_range(start, end, freq='D', closed='left', tz='utc'):
             key = get_key(sid, start_day)
             if key not in cache:
-                # This block of code splits the day into three 8 hour periods, fetches trades for each, then combines
-
-                td1 = timedelta(hours=8, seconds=-1)
-                td2 = timedelta(hours=8)
-
-                end1 = start_day + td1
-                start2 = start_day + td2
-                end2 = end1 + td2
-                start3 = start2 + td2
-                end_day = start3 + td2
-
-                print("Fetching data for {} from {} to {}".format(asset_pair, start_day, end_day))
-
-                trades = pd.concat([fetch_trades(asset_pair, start_day, end1), fetch_trades(asset_pair, start2, end2), fetch_trades(asset_pair, start3, end_day)])
+                end_day = start_day + timedelta(days=1, seconds=-1)
+                trades = fetch_trades(asset_pair, start_day, end_day)
                 cache[key] = make_candle_stick(trades)
+                #print("\nFetched trades from {} to {}".format(start_day, end_day)) DEBUG
             yield sid, cache[key]
 
 
@@ -219,4 +236,13 @@ register_calendar('POLONIEX', PoloniexCalendar())
 # everywhere in run_algo._run, *DOH*!!!
 deregister_calendar('NYSE')
 register_calendar_alias('NYSE', 'POLONIEX', force=False)
-# Deleted the register function as the built in zipline register function plays better with other data bundles
+register(
+    '.test_poloniex',
+    create_bundle(
+        [Pairs.usdt_eth],
+        pd.Timestamp('2016-01-01', tz='utc'),
+        pd.Timestamp('2016-01-31', tz='utc'),
+    ),
+    calendar_name='POLONIEX',
+    minutes_per_day=24*60
+)
