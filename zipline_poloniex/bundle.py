@@ -12,7 +12,6 @@ from pandas.tseries.offsets import CustomBusinessDay
 from zipline.utils.calendars import (
     TradingCalendar, register_calendar, register_calendar_alias,
     deregister_calendar)
-from zipline.data.bundles import register
 from zipline.utils.memoize import lazyval
 
 from .api import get_currencies, get_trade_hist
@@ -28,6 +27,7 @@ class Pairs(object):
     """Record object holding most common US-$ / crypto-currency pairs
     """
     usdt_btc = 'USDT_BTC'
+    usdt_btc = 'USDT_BCH'
     usdt_eth = 'USDT_ETH'
     usdt_dash = 'USDT_DASH'
     usdt_etc = 'USDT_ETC'
@@ -127,8 +127,20 @@ def prepare_data(start, end, sid_map, cache):
         for start_day in pd.date_range(start, end, freq='D', closed='left', tz='utc'):
             key = get_key(sid, start_day)
             if key not in cache:
-                end_day = start_day + timedelta(days=1, seconds=-1)
-                trades = fetch_trades(asset_pair, start_day, end_day)
+                # This block of code splits the day into three 8 hour periods, fetches trades for each, then combines
+
+                td1 = timedelta(hours=8, seconds=-1)
+                td2 = timedelta(hours=8)
+
+                end1 = start_day + td1
+                start2 = start_day + td2
+                end2 = end1 + td2
+                start3 = start2 + td2
+                end_day = start3 + td2
+
+                print("Fetching data for {} from {} to {}".format(asset_pair, start_day, end_day))
+
+                trades = pd.concat([fetch_trades(asset_pair, start_day, end1), fetch_trades(asset_pair, start2, end2), fetch_trades(asset_pair, start3, end_day)])
                 cache[key] = make_candle_stick(trades)
             yield sid, cache[key]
 
@@ -207,13 +219,4 @@ register_calendar('POLONIEX', PoloniexCalendar())
 # everywhere in run_algo._run, *DOH*!!!
 deregister_calendar('NYSE')
 register_calendar_alias('NYSE', 'POLONIEX', force=False)
-register(
-    '.test_poloniex',
-    create_bundle(
-        [Pairs.usdt_eth],
-        pd.Timestamp('2016-01-01', tz='utc'),
-        pd.Timestamp('2016-01-31', tz='utc'),
-    ),
-    calendar_name='POLONIEX',
-    minutes_per_day=24*60
-)
+# Deleted the register function as the built in zipline register function plays better with other data bundles
