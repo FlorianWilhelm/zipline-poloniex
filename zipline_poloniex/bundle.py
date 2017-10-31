@@ -19,7 +19,7 @@ from .api import get_currencies, get_trade_hist, TradesExceeded
 
 __author__ = "Florian Wilhelm"
 __copyright__ = "Florian Wilhelm"
-__license__ = "new-bsd"
+__license__ = "mit"
 
 _logger = logging.getLogger(__name__)
 
@@ -81,6 +81,7 @@ def make_candle_stick(trades, freq='1T'):
     return pd.DataFrame(
         dict(open=open, high=high, low=low, close=close, volume=volume))
 
+
 def get_trade_hist_alias(asset_pair, start, end):
     """Helper function to run api.get_trade_hist
 
@@ -108,6 +109,7 @@ def get_trade_hist_alias(asset_pair, start, end):
             get_trade_hist_alias(asset_pair, start + new_timedelta, end)
             ])
     return df
+
 
 def fetch_trades(asset_pair, start, end):
     """Helper function to fetch trades for a single asset pair
@@ -158,7 +160,7 @@ def prepare_data(start, end, sid_map, cache):
                 end_day = start_day + timedelta(days=1, seconds=-1)
                 trades = fetch_trades(asset_pair, start_day, end_day)
                 cache[key] = make_candle_stick(trades)
-                #print("\nFetched trades from {} to {}".format(start_day, end_day)) DEBUG
+                _logger.debug("Fetched trades from {} to {}".format(start_day, end_day))
             yield sid, cache[key]
 
 

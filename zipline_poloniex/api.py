@@ -11,7 +11,7 @@ from .utils import unix_time, throttle
 
 __author__ = "Florian Wilhelm"
 __copyright__ = "Florian Wilhelm"
-__license__ = "new-bsd"
+__license__ = "mit"
 
 _logger = logging.getLogger(__name__)
 

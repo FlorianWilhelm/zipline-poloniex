@@ -9,7 +9,7 @@ from zipline_poloniex.utils import setup_logging
 
 __author__ = "Florian Wilhelm"
 __copyright__ = "Florian Wilhelm"
-__license__ = "new-bsd"
+__license__ = "mit"
 
 # setup logging and all
 setup_logging(logging.INFO)
