@@ -15,7 +15,7 @@ from zipline.utils.calendars import (
 from zipline.data.bundles import register
 from zipline.utils.memoize import lazyval
 
-from .api import get_currencies, get_trade_hist, TradesExceeded
+from .api import get_currencies, get_trade_hist_alias
 
 __author__ = "Florian Wilhelm"
 __copyright__ = "Florian Wilhelm"
@@ -80,35 +80,6 @@ def make_candle_stick(trades, freq='1T'):
     close = trades['rate'].resample(freq).last()
     return pd.DataFrame(
         dict(open=open, high=high, low=low, close=close, volume=volume))
-
-
-def get_trade_hist_alias(asset_pair, start, end):
-    """Helper function to run api.get_trade_hist
-
-    If a TradesExceeded exception is raised, it splits the timerange of
-    (start) to (end) in half and calls itself with the new timeranges.
-
-    This prevents any 'hotspots' where there is extremely high trading
-    activity in a short period of time - eg on usdt_btc
-
-    Args:
-        asset_pair: name of the asset pair
-        start (pandas.Timestamp): start of period
-        end (pandas.Timestamp): end of period
-
-    Returns:
-        pandas.DataFrame: dataframe containing trades of asset
-    """
-    original_timedelta = end - start
-    try:
-        df = get_trade_hist(asset_pair, start, end)
-    except TradesExceeded:
-        new_timedelta = original_timedelta / 2
-        df = pd.concat([
-            get_trade_hist_alias(asset_pair, start, start + new_timedelta - pd.offsets.Second()),
-            get_trade_hist_alias(asset_pair, start + new_timedelta, end)
-            ])
-    return df
 
 
 def fetch_trades(asset_pair, start, end):

@@ -81,6 +81,44 @@ def get_trade_hist(pair, start, end):
     return trades
 
 
+def get_trade_hist_alias(asset_pair, start, end):
+    """Helper function to run api.get_trade_hist
+
+    If a TradesExceeded exception is raised, it splits the timerange of
+    (start) to (end) in half and calls itself with the new timeranges.
+
+    This prevents any 'hotspots' where there is extremely high trading
+    activity in a short period of time - eg on usdt_btc
+
+    This also protects against any HTTPErrors (such as 404) that pop up
+    seemingly at random.
+
+    This function has the possibility of generating an endless loop, as it
+    calls itself if any error is raised from get_trade_hist(). In practice,
+    however, the HTTPError should not occur more than once (per API call),
+    and the TradesExceeded error is limited to the amount of trades per day.
+
+    Args:
+        asset_pair: name of the asset pair
+        start (pandas.Timestamp): start of period
+        end (pandas.Timestamp): end of period
+
+    Returns:
+        pandas.DataFrame: dataframe containing trades of asset
+    """
+    original_timedelta = end - start
+    try:
+        df = get_trade_hist(asset_pair, start, end)
+    except requests.exceptions.HTTPError:
+        df = get_trade_hist_alias(asset_pair, start, end)
+    except TradesExceeded:
+        new_timedelta = original_timedelta / 2
+        df = pd.concat([
+            get_trade_hist_alias(asset_pair, start,start + new_timedelta - pd.offsets.Second()),
+            get_trade_hist_alias(asset_pair, start + new_timedelta, end)])
+    return df
+
+
 def get_chart_data(pair, start, end, period=1800):
     """Fetch chart data for asset pair in given period
 

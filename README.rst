@@ -17,6 +17,12 @@ The ``create_bundle`` function returns the necessary ingest function for ``regis
 Use the ``Pairs`` record for common US-Dollar to crypto-currency pairs.
 
 
+Alternatively, you can clone this repository and install with pip::
+
+    git clone https://github.com/FlorianWilhelm/zipline-poloniex.git
+    cd zipline-poloniex
+    pip install -e .
+
 Example
 =======
 
