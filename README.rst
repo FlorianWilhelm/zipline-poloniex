@@ -2,6 +2,8 @@
 Zipline Poloniex Bundle
 =======================
 
+**UNMAINTAINED: This project is no longer actively developed. If you are interested in taking over please send me a message.**
+
 Poloniex data bundle for zipline_, the pythonic algorithmic trading library.
 
 
