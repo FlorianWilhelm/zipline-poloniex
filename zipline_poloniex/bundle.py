@@ -190,12 +190,12 @@ class PoloniexCalendar(TradingCalendar):
         return timezone('UTC')
 
     @property
-    def open_time(self):
-        return time(0, 0)
+    def open_times(self):
+        return ((None, time(0, 0)),)
 
     @property
-    def close_time(self):
-        return time(23, 59)
+    def close_times(self):
+        return ((None, time(23, 59)),)
 
     @lazyval
     def day(self):
